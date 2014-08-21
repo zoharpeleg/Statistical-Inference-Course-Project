@@ -2,7 +2,8 @@
 title: "Statistical Inference Course Project - Part 1"
 author: "Zohar Peleg"
 date: "Tuesday, August 12, 2014"
-output: html_document
+output: 
+  word_document
 ---
 
 This report covers the simulation excercize from the first part of the statistical inference course project. The report does not show the full R code. The complete reproduceable code can be found at my github account at https://github.com/zoharpeleg/Statistical-Inference-Course-Project
@@ -74,17 +75,23 @@ Now it is possible to evaluate the percentage of good intervals, which contain t
 paste(mean(1/lambda<ul&1/lambda>ll)*100,"% of the intervals contained the population mean",sep="")
 ``` 
 
-Repeating the set many times, I have found that the coverage was consistently about 92%.
-I tried various sample sizes and figured out that when the sample size is increased from 40 to 400, the coverage goes up to 95%. My conclusion is that a sample size of 40 exponentials(0.2), is not sufficiently large for 95% confidence by CLT.
-
-I also tried replacing the normal CLT interval with t-interval, by replacing the 1.96 with qt(0.975,n-1) = `r qt(0.975,n-1)`. The coverage increased to about 93%, which is about 0.5%-1% improvement.
-
-I am adding an interesting view of the distribution of the calculated intervals compared to the population's mean, by plotting each sample's interval as *(x=ll; y=ul)*:
-```{r,eval=TRUE}
-plot(ll,ul, pch = 20, cex = .5)
-abline(v=5,col=3,lty=3)
-abline(h=5,col=3,lty=3)
+Repeating this for many times, I have found that the coverage was consistently around 92%. 
+I tried other sample sizes and figured out that the coverage increases as the sample size increases. So I ran the previous code in a loop, sequencing through multiple sample sizes to investigate the effect of the sample size on the coverage. The results are shown in the following figure:
+```{r}
+nvals <- seq(20, 500, by = 5)
+coverage <- sapply(nvals, function(nx) {
+        x<-matrix(rexp(nx*1000,0.2),1000)            
+        meanx<-apply(x, 1, mean) 
+        sdx<-apply(x, 1, sd)        
+        ul<-meanx+sdx*1.96/sqrt(nx)
+        ll<-meanx-sdx*1.96/sqrt(nx)
+        mean(ll < 1/lambda & ul > 1/lambda)
+})
+plot(nvals,coverage, pch=20, cex=0.5, type="l", lwd=2, xlab="sample size",main="coverage of exponential(0.2) \n as a function of sample size")
+lines(smooth.spline(nvals, coverage, spar=0.6), col="red", lwd=2)
 ```
 
-The point (5,5) represents the ultimate interval (ul=ll=5). All the points in the upper-left rectangle represent good intervals which contain the population mean $1/\lambda$ (ll<5 and ul>5). The points in the upper-right area are the upper tail, in which the interval's lower limit is greater than 5, and the lower-left area is the lower tail, in which the interval's upper limit is smaller than 5.
+From the plot above I cnclude that the sample size of 40 observation does not contain enough information as needed to determine the confidence interval according to CLT. 
+We see asymptotic convergence towards 95% as the sample size increases. It takes about 250-450 observations to get close to 95%.
 
+I also tried replacing the normal CLT interval with t-interval, by replacing the 1.96 with qt(0.975,n-1) = `r qt(0.975,n-1)`. The coverage increased to about 93%, which is about 0.5%-1% improvement.
